@@ -22,11 +22,20 @@ namespace TodoApp.Controllers
         // GET: Items
         public async Task<IActionResult> Index()
         {
-              return View(await _context.Items.ToListAsync());
+            try
+            {
+                var items = await _context.Items.ToListAsync();
+                return View(items);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            
         }
 
         // GET: Items/Details/5
-        public async Task<IActionResult> Details(string id)
+        public async Task<IActionResult> Details(int id)
         {
             if (id == null || _context.Items == null)
             {
@@ -56,17 +65,26 @@ namespace TodoApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Name,Description,Completed")] Item item)
         {
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(item);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                if (ModelState.IsValid)
+                {
+                    _context.Add(item);
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
             }
+            catch (Exception)
+            {
+
+                throw;
+            }
+            
             return View(item);
         }
 
         // GET: Items/Edit/5
-        public async Task<IActionResult> Edit(string id)
+        public async Task<IActionResult> Edit(int id)
         {
             if (id == null || _context.Items == null)
             {
@@ -86,7 +104,7 @@ namespace TodoApp.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(string id, [Bind("Id,Name,Description,Completed")] Item item)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Completed")] Item item)
         {
             if (id != item.Id)
             {
@@ -117,7 +135,7 @@ namespace TodoApp.Controllers
         }
 
         // GET: Items/Delete/5
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(int id)
         {
             if (id == null || _context.Items == null)
             {
@@ -137,7 +155,7 @@ namespace TodoApp.Controllers
         // POST: Items/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(string id)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
             if (_context.Items == null)
             {
@@ -153,7 +171,7 @@ namespace TodoApp.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private bool ItemExists(string id)
+        private bool ItemExists(int id)
         {
           return _context.Items.Any(e => e.Id == id);
         }
