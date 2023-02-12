@@ -1,0 +1,50 @@
+IF OBJECT_ID('dbo.usp_changeStatusItem') IS NOT NULL
+	SET NOEXEC ON
+GO
+CREATE PROCEDURE dbo.usp_changeStatusItem
+AS RETURN;
+GO
+SET NOEXEC OFF
+GO
+ALTER PROCEDURE dbo.usp_changeStatusItem
+(
+	@Id UNIQUEIDENTIFIER,
+	@Status TINYINT
+)
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	BEGIN TRY
+
+		BEGIN TRANSACTION 
+			UPDATE TblTodo SET  
+			[Status] = @Status, 
+			UpdatedDate = GETDATE()
+			WHERE ID = @Id
+		COMMIT TRANSACTION;
+	END TRY
+	BEGIN CATCH
+		BEGIN TRANSACTION
+			INSERT INTO dbo..DB_Errors
+			VALUES
+		  (
+			SUSER_SNAME(),
+			ERROR_NUMBER(),
+			ERROR_STATE(),
+			ERROR_SEVERITY(),
+			ERROR_LINE(),
+			ERROR_PROCEDURE(),
+			ERROR_MESSAGE(),
+			GETDATE());
+ 
+		-- Transaction uncommittable
+			IF (XACT_STATE()) = -1
+				ROLLBACK TRANSACTION
+ 
+		-- Transaction committable
+			IF (XACT_STATE()) = 1
+				COMMIT TRANSACTION
+	END CATCH
+
+END
+GO

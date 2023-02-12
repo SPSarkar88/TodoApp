@@ -4,51 +4,33 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using TodoApp.Data;
 using TodoApp.Models;
+using TodoApp.Services;
+using TodoApp.Util;
 
 namespace TodoApp.Controllers
 {
     public class ItemsController : Controller
     {
-        private readonly AppDbContext _context;
 
-        public ItemsController(AppDbContext context)
+        private readonly IItemService _itemService;
+
+        public ItemsController(IItemService itemService)
         {
-            _context = context;
+            _itemService = itemService ;
         }
 
         // GET: Items
         public async Task<IActionResult> Index()
         {
-            try
-            {
-                var items = await _context.Items.ToListAsync();
-                return View(items);
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-            
+            ItemResults<Item> items = await _itemService.GetItems();
+            return View(items);
         }
 
         // GET: Items/Details/5
-        public async Task<IActionResult> Details(int id)
+        public async Task<IActionResult> Details(Guid id)
         {
-            if (id == null || _context.Items == null)
-            {
-                return NotFound();
-            }
-
-            var item = await _context.Items
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (item == null)
-            {
-                return NotFound();
-            }
-
+            Item item = await _itemService.GetItem(id);
             return View(item);
         }
 
@@ -63,40 +45,23 @@ namespace TodoApp.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Description,Completed")] Item item)
+        public async Task<IActionResult> Create(Item item)
         {
-            try
-            {
-                if (ModelState.IsValid)
-                {
-                    _context.Add(item);
-                    await _context.SaveChangesAsync();
-                    return RedirectToAction(nameof(Index));
-                }
-            }
-            catch (Exception)
-            {
+            if(! ModelState.IsValid) return View(item);
+            var isInsertSucess = await _itemService.InsertItem(item);
 
-                throw;
-            }
-            
-            return View(item);
+            return isInsertSucess ? RedirectToAction(nameof(Index)) : View(item);
         }
 
         // GET: Items/Edit/5
-        public async Task<IActionResult> Edit(int id)
+        public async Task<IActionResult> Edit(Guid id)
         {
-            if (id == null || _context.Items == null)
+            var item = await _itemService.GetItem(id) ;
+            if(item!= null)
             {
-                return NotFound();
+                return View(item);
             }
-
-            var item = await _context.Items.FindAsync(id);
-            if (item == null)
-            {
-                return NotFound();
-            }
-            return View(item);
+            return RedirectToAction(nameof(Index));
         }
 
         // POST: Items/Edit/5
@@ -104,76 +69,33 @@ namespace TodoApp.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Completed")] Item item)
+        public async Task<IActionResult> Edit(Item item)
         {
-            if (id != item.Id)
-            {
-                return NotFound();
-            }
+            if (!ModelState.IsValid) { return View(item); }
+            if (item == null && item.Id == Guid.Empty){return View(item);}
+            var isUpdateSucess = await _itemService.UpdateItem(item);
+            return isUpdateSucess ? RedirectToAction(nameof(Index)): View(item);
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(item);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ItemExists(item.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(item);
         }
 
         // GET: Items/Delete/5
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(Guid id)
         {
-            if (id == null || _context.Items == null)
+            var item = await _itemService.GetItem(id);
+            if (item != null)
             {
-                return NotFound();
+                return View(item);
             }
-
-            var item = await _context.Items
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (item == null)
-            {
-                return NotFound();
-            }
-
-            return View(item);
+            return RedirectToAction(nameof(Index));
         }
 
         // POST: Items/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
-            if (_context.Items == null)
-            {
-                return Problem("Entity set 'AppDbContext.Items'  is null.");
-            }
-            var item = await _context.Items.FindAsync(id);
-            if (item != null)
-            {
-                _context.Items.Remove(item);
-            }
-            
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
-        private bool ItemExists(int id)
-        {
-          return _context.Items.Any(e => e.Id == id);
+            var deleteResult = await _itemService.DeleteItem(id);
+            return deleteResult ? RedirectToAction(nameof(Index)): RedirectToAction(nameof(Delete), id);
         }
     }
 }

@@ -1,5 +1,7 @@
-using Microsoft.EntityFrameworkCore;
-using TodoApp.Data;
+using TodoApp.Repository;
+using TodoApp.Repository.Implementations;
+using TodoApp.Services;
+using TodoApp.Services.Implementations;
 
 namespace TodoApp
 {
@@ -9,9 +11,8 @@ namespace TodoApp
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddDbContext<AppDbContext>(option =>
-                option.UseSqlServer(builder.Configuration.GetConnectionString("TodoDb"))
-            );
+            builder.Services.AddScoped<IItemRepository, ItemRepository>();
+            builder.Services.AddScoped<IItemService, ItemService>();
             // Add services to the container.
             builder.Services.AddControllersWithViews();
 
