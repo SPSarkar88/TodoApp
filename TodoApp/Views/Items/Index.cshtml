@@ -23,10 +23,7 @@
                 Created Date
             </th>
             <th>
-                Is Active
-            </th>
-            <th>
-                Is Deleted
+                Status
             </th>
             <th></th>
         </tr>
@@ -41,8 +38,22 @@
                 @Html.DisplayFor(modelItem => item.Description)
             </td>
             <td>
-                    @Html.DisplayFor(modelItem => item.CreateDate)
+                @Html.DisplayFor(modelItem => item.CreateDate)
             </td>
+            <td>
+                    @if (item.Status == 0)
+                    {
+                        <P>Incomplete</P>
+                    }
+                    else if (item.Status == 1)
+                    {
+                        <P>Complete</P>
+                    }
+                    else
+                    {
+                        <P>Cancel</P>
+                    }
+                </td>
             <td>
                 <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
                     <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
